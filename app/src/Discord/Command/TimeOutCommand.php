@@ -9,7 +9,9 @@ use Carbon\CarbonInterval;
 use Discord\Builders\CommandBuilder;
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
+use Discord\Parts\Interactions\Command\Option as CommandOption;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Interactions\Request\Option;
 use Discord\Parts\User\Member;
 use Wiwi\Bot\Discord\Interaction\OpaqueInteraction;
 use Wiwi\Bot\Discord\Interaction\TimeOutInteraction;
@@ -32,7 +34,13 @@ final class TimeOutCommand implements CommandInterface
     {
         return CommandBuilder::new()
             ->setName(self::COMMAND_NAME)
-            ->setDescription('TG ????');
+            ->setDescription('TG ????')
+            ->addOption(
+                (new CommandOption($discord))
+                    ->setName('user')
+                    ->setDescription('L\'utilisateur')
+                    ->setType(CommandOption::USER)
+            );
     }
 
     public function callback(Discord $discord): void
@@ -51,17 +59,22 @@ final class TimeOutCommand implements CommandInterface
             }
             $this->usePerMembers[$interaction->member->user->id] = $now;
 
+            /** @var Option[] $interactionOptions */
+            $interactionOptions = $interaction->data?->options;
+            /** @var string|null $targetUser */
+            $targetUserId = $interactionOptions['user']->value ?? self::WIWI_ID;
+
             $random = mt_rand(0, 100);
-            $until = $now->add(new CarbonInterval(seconds: 30));
+            $until = $now->add(new CarbonInterval(seconds: 40));
 
             if ($random < 10) {
                 // shinny User
                 $interaction->respondWithMessage(MessageBuilder::new()->setContent('WOW on compren R à ce que tu di'));
-                $this->opaqueInteraction->addMember($interaction->member->user, $until);
+                $this->opaqueInteraction->addMember($interaction->member->user, $now->add(new CarbonInterval(minutes: 2)));
             } elseif ($random < 55) {
                 // remover Wiwi
                 $interaction->respondWithMessage(MessageBuilder::new()->setContent(sprintf('ta raison, <@%s> TG', self::WIWI_ID)));
-                $interaction->guild->members->fetch(self::WIWI_ID)->then(function (Member $member) use ($until) {
+                $interaction->guild->members->fetch($targetUserId)->then(function (Member $member) use ($until) {
                     $this->opaqueInteraction->addMember($member->user, $until);
                 });
             } else {

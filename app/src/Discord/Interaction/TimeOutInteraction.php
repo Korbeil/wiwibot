@@ -10,6 +10,7 @@ use Discord\Discord;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\User;
 use Discord\WebSockets\Event;
+use Wiwi\Bot\Helper\DateIntervalHelper;
 
 final class TimeOutInteraction implements InteractionInterface
 {
@@ -23,21 +24,22 @@ final class TimeOutInteraction implements InteractionInterface
 
     public function callback(Discord $discord): void
     {
-        $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) {
+        $discord->on(Event::MESSAGE_CREATE, function (Message $message) {
             if ($message->author->bot) {
                 return;
             }
 
             if (array_key_exists($message->author->id, $this->timeOutMembers)) {
+                $now = Carbon::now();
                 $until = $this->timeOutMembers[$message->author->id];
 
-                if (Carbon::now() > $until) {
+                if ($now > $until) {
                     unset($this->timeOutMembers[$message->author->id]);
 
                     return;
                 }
 
-                $message->reply(MessageBuilder::new()->setContent('j di TG'))->then(function () use ($message) {
+                $message->reply(MessageBuilder::new()->setContent(sprintf('j di TG (plus que %s)', DateIntervalHelper::intervalToString($until->diff($now)))))->then(function () use ($message) {
                     $message->delete();
                 });
             }
