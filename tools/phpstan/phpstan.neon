@@ -1,0 +1,13 @@
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: max
+    tmpDir: .phpstan
+
+    paths:
+        - ../../app/src
+    bootstrapFiles:
+        - ../../app/vendor/autoload.php
+
+    checkMissingIterableValueType: false
