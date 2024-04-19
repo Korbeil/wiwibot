@@ -12,6 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Wiwi\Bot\Discord\Command\CommandInterface;
 use Wiwi\Bot\Discord\Discord;
+use Wiwi\Bot\Discord\Interaction\InteractionInterface;
 
 #[AsCommand(
     name: 'wiwi:bot',
@@ -23,6 +24,9 @@ final class BotCommand extends Command
         /** @var CommandInterface[] $commands */
         #[TaggedIterator(CommandInterface::class)]
         private readonly iterable $commands,
+        /** @var InteractionInterface[] $interactions */
+        #[TaggedIterator(InteractionInterface::class)]
+        private readonly iterable $interactions,
         private readonly Discord $discord,
     ) {
         parent::__construct();
@@ -32,6 +36,10 @@ final class BotCommand extends Command
     {
         $this->discord->on('init', function (Client $discord) {
             foreach ($this->commands as $command) {
+                $command->callback($discord);
+            }
+
+            foreach ($this->interactions as $command) {
                 $command->callback($discord);
             }
         });

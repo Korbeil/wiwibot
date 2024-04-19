@@ -17,7 +17,7 @@ final class Discord extends Client
     ) {
         parent::__construct([
             'token' => $discordToken,
-            'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT,
+            'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT | Intents::GUILD_MEMBERS,
             'logger' => $logger,
         ]);
     }
