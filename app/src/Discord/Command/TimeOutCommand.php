@@ -73,7 +73,7 @@ final class TimeOutCommand implements CommandInterface
                 $this->opaqueInteraction->addMember($interaction->member->user, $now->add(new CarbonInterval(minutes: 2)));
             } elseif ($random < 55) {
                 // remover Wiwi
-                $interaction->respondWithMessage(MessageBuilder::new()->setContent(sprintf('ta raison, <@%s> TG', self::WIWI_ID)));
+                $interaction->respondWithMessage(MessageBuilder::new()->setContent(sprintf('ta raison, <@%s> TG', $targetUserId)));
                 $interaction->guild->members->fetch($targetUserId)->then(function (Member $member) use ($until) {
                     $this->opaqueInteraction->addMember($member->user, $until);
                 });

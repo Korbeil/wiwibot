@@ -40,7 +40,7 @@ final class OpaqueInteraction implements InteractionInterface
                 $parts = explode(' ', $message->content);
                 foreach ($parts as &$part) {
                     if (!$this->isEmoji($part)) {
-                        $part = str_shuffle($part);
+                        $part = $this->shuffle($part);
                     } else {
                         $part = '🦀';
                     }
@@ -51,6 +51,14 @@ final class OpaqueInteraction implements InteractionInterface
                 });
             }
         });
+    }
+
+    private function shuffle(string $str): string
+    {
+        $tmp = preg_split('//u', $str, -1, PREG_SPLIT_NO_EMPTY);
+        shuffle($tmp);
+
+        return join('', $tmp);
     }
 
     private function isEmoji($string): bool
