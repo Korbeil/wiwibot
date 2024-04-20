@@ -12,6 +12,10 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             string $discordToken: '%env(DISCORD_TOKEN)%'
+            string $discordVictimUser: '%env(DISCORD_VICTIM_USER)%'
+            string $youtubeToken: '%env(YOUTUBE_TOKEN)%'
+            string $youtubeChannelId: '%env(YOUTUBE_CHANNEL_ID)%'
+            string $youtubeDiscordChannel: '%env(YOUTUBE_DISCORD_CHANNEL)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

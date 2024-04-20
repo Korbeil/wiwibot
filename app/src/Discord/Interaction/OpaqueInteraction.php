@@ -46,9 +46,8 @@ final class OpaqueInteraction implements InteractionInterface
                     }
                 }
 
-                $message->channel->sendMessage(MessageBuilder::new()->setContent(sprintf('%s: ', $message->author->username) . implode(' ', $parts)))->then(function () use ($message) {
-                    $message->delete();
-                });
+                $message->channel->sendMessage(MessageBuilder::new()->setContent(sprintf('%s: ', $message->author->username) . implode(' ', $parts)));
+                $message->delete();
             }
         });
     }

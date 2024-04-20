@@ -19,7 +19,6 @@ use Wiwi\Bot\Discord\Interaction\TimeOutInteraction;
 final class TimeOutCommand implements CommandInterface
 {
     private const COMMAND_NAME = 'tg';
-    private const WIWI_ID = '204916723676086272';
 
     /** @var array<string, Carbon> */
     private array $usePerMembers = [];
@@ -27,6 +26,7 @@ final class TimeOutCommand implements CommandInterface
     public function __construct(
         private readonly TimeOutInteraction $timeOutInteraction,
         private readonly OpaqueInteraction $opaqueInteraction,
+        private readonly string $discordVictimUser,
     ) {
     }
 
@@ -62,7 +62,7 @@ final class TimeOutCommand implements CommandInterface
             /** @var Option[] $interactionOptions */
             $interactionOptions = $interaction->data?->options;
             /** @var string|null $targetUser */
-            $targetUserId = $interactionOptions['user']->value ?? self::WIWI_ID;
+            $targetUserId = $interactionOptions['user']->value ?? $this->discordVictimUser;
 
             $random = mt_rand(0, 100);
             $until = $now->add(new CarbonInterval(seconds: 40));
