@@ -22,7 +22,7 @@ final class YouTubeInteraction implements InteractionInterface
     public function callback(Discord $discord): void
     {
         $youtubeClient = new CurlHttpClient([
-            'base_uri' => 'https://www.googleapis.com/youtube/v3/',
+            'base_uri' => 'https://www.googleapis.com/',
             'query' => [
                 'key' => $this->youtubeToken,
                 'channelId' => $this->youtubeChannelId,
@@ -30,7 +30,7 @@ final class YouTubeInteraction implements InteractionInterface
         ]);
 
         $discord->getLoop()->addPeriodicTimer(15 * 60, function () use ($youtubeClient, $discord) {
-            $response = $youtubeClient->request('GET', '/search', [
+            $response = $youtubeClient->request('GET', '/youtube/v3/search', [
                 'query' => [
                     'part' => 'snippet',
                     'maxResults' => 1,
