@@ -15,6 +15,7 @@ final class YouTubeInteraction implements InteractionInterface
     public function __construct(
         private readonly string $youtubeToken,
         private readonly string $youtubeChannelId,
+        private readonly string $youtubeDiscordRole,
         private readonly string $youtubeDiscordChannel,
     ) {
     }
@@ -47,7 +48,8 @@ final class YouTubeInteraction implements InteractionInterface
             } elseif ($channelLastVideoData['id']['videoId'] !== $this->lastVideoId) {
                 // new video !
                 $message = sprintf(
-                    '@Youtube %s vient d\'upload %s, rendez-vous sur https://www.youtube.com/watch?v=%s',
+                    '<@&%s> %s vient d\'upload %s, rendez-vous sur https://www.youtube.com/watch?v=%s',
+                    $this->youtubeDiscordRole,
                     $channelLastVideoData['snippet']['channelTitle'],
                     $channelLastVideoData['snippet']['title'],
                     $channelLastVideoData['id']['videoId']
