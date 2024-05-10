@@ -16,6 +16,7 @@ final class YouTubeInteraction implements InteractionInterface
         private readonly string $youtubeToken,
         private readonly string $youtubeChannelId,
         private readonly string $youtubeDiscordRole,
+        private readonly string $youtubeDiscordVodRole,
         private readonly string $youtubeDiscordChannel,
     ) {
     }
@@ -45,13 +46,20 @@ final class YouTubeInteraction implements InteractionInterface
 
             if (null === $this->lastVideoId) {
                 $this->lastVideoId = $channelLastVideoData['id']['videoId'];
-            } elseif ($channelLastVideoData['id']['videoId'] !== $this->lastVideoId) {
-                // new video !
+            } elseif ($channelLastVideoData['id']['videoId'] !== $this->lastVideoId) { // new video !
+                if (\str_starts_with($channelLastVideoData['snippet']['title'], 'VOD')) {
+                    $roleIdToPing = $this->youtubeDiscordRole;
+                    $videoTitle = \mb_substr($channelLastVideoData['snippet']['title'], \mb_strlen('VOD - '));
+                } else {
+                    $roleIdToPing = $this->youtubeDiscordVodRole;
+                    $videoTitle = $channelLastVideoData['snippet']['title'];
+                }
+
                 $message = sprintf(
                     '<@&%s> %s vient d\'upload %s, rendez-vous sur https://www.youtube.com/watch?v=%s',
-                    $this->youtubeDiscordRole,
+                    $roleIdToPing,
                     $channelLastVideoData['snippet']['channelTitle'],
-                    $channelLastVideoData['snippet']['title'],
+                    $videoTitle,
                     $channelLastVideoData['id']['videoId']
                 );
 
