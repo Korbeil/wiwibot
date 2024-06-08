@@ -47,11 +47,11 @@ final class YouTubeInteraction implements InteractionInterface
             if (null === $this->lastVideoId) {
                 $this->lastVideoId = $channelLastVideoData['id']['videoId'];
             } elseif ($channelLastVideoData['id']['videoId'] !== $this->lastVideoId) { // new video !
-                if (\str_starts_with($channelLastVideoData['snippet']['title'], 'VOD')) {
-                    $roleIdToPing = $this->youtubeDiscordRole;
+                if (\str_starts_with($channelLastVideoData['snippet']['title'], 'VOD - ')) {
+                    $roleIdToPing = $this->youtubeDiscordVodRole;
                     $videoTitle = \mb_substr($channelLastVideoData['snippet']['title'], \mb_strlen('VOD - '));
                 } else {
-                    $roleIdToPing = $this->youtubeDiscordVodRole;
+                    $roleIdToPing = $this->youtubeDiscordRole;
                     $videoTitle = $channelLastVideoData['snippet']['title'];
                 }
 

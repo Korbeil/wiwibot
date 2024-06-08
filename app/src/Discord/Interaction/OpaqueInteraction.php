@@ -23,7 +23,7 @@ final class OpaqueInteraction implements InteractionInterface
 
     public function callback(Discord $discord): void
     {
-        $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) {
+        $discord->on(Event::MESSAGE_CREATE, function (Message $message) {
             if ($message->author->bot) {
                 return;
             }
