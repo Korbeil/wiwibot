@@ -18,6 +18,7 @@ services:
             string $youtubeDiscordRole: '%env(YOUTUBE_DISCORD_ROLE)%'
             string $youtubeDiscordVodRole: '%env(YOUTUBE_DISCORD_VOD_ROLE)%'
             string $youtubeDiscordChannel: '%env(YOUTUBE_DISCORD_CHANNEL)%'
+            int $reactHttpServerPort: '%env(int:REACT_HTTP_SERVER_PORT)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

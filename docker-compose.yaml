@@ -1,0 +1,11 @@
+services:
+  wiwibot:
+    build: .
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.home-wiwibot.tls: true
+      traefik.http.routers.home-wiwibot.rule: "Host(`wiwibot.mealtime.io`)"
+      traefik.http.routers.home-wiwibot-unsecure.rule: "Host(`wiwibot.mealtime.io`)"
+      traefik.http.routers.home-wiwibot-unsecure.middlewares: "redirect-to-https@file"
+      traefik.http.services.home-wiwibot.loadbalancer.server.port: 8080

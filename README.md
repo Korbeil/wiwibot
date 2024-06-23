@@ -9,5 +9,5 @@ app/bin/console wiwi:bot # to start the bot
 
 ```bash
 docker build --tag 'wiwibot' .
-docker run -d --restart unless-stopped wiwibot:latest
+docker compose up
 ```
