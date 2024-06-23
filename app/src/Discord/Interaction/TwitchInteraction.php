@@ -18,7 +18,8 @@ use function React\Promise\resolve;
 
 final readonly class TwitchInteraction implements InteractionInterface
 {
-    private const CORS_HEADERS = [
+    private const DEFAULT_HEADERS = [
+        'Server' => '',
         'Access-Control-Allow-Origin'  => '*',
         'Access-Control-Allow-Methods' => 'GET, OPTIONS',
     ];
@@ -55,7 +56,7 @@ final readonly class TwitchInteraction implements InteractionInterface
                 return resolve(
                     new Response(
                         StatusCodeInterface::STATUS_METHOD_NOT_ALLOWED,
-                        array_merge(self::JSON_TYPE, self::CORS_HEADERS),
+                        array_merge(self::JSON_TYPE, self::DEFAULT_HEADERS),
                         json_encode(['message' => 'Invalid request method']),
                     ),
                 );
@@ -65,7 +66,7 @@ final readonly class TwitchInteraction implements InteractionInterface
                 return resolve(
                     new Response(
                         StatusCodeInterface::STATUS_NOT_FOUND,
-                        array_merge(self::JSON_TYPE, self::CORS_HEADERS),
+                        array_merge(self::JSON_TYPE, self::DEFAULT_HEADERS),
                         json_encode(['message' => 'Route not found']),
                     ),
                 );
@@ -85,7 +86,7 @@ final readonly class TwitchInteraction implements InteractionInterface
         return resolve(
             new Response(
                 StatusCodeInterface::STATUS_OK,
-                \array_merge(self::TEXT_TYPE, self::CORS_HEADERS),
+                \array_merge(self::TEXT_TYPE, self::DEFAULT_HEADERS),
             ),
         );
     }
