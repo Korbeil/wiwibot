@@ -8,6 +8,6 @@ app/bin/console wiwi:bot # to start the bot
 ## Docker
 
 ```bash
-docker build --tag 'wiwibot' .
-docker compose up
+docker build --no-cache --build-arg CACHE_DATE="$(date)" --tag 'wiwibot-wiwibot' .
+docker compose up -d
 ```
