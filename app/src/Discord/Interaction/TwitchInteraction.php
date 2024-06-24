@@ -7,21 +7,28 @@ namespace Wiwi\Bot\Discord\Interaction;
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use FastRoute\Dispatcher;
+use FastRoute\RouteCollector;
+
+use Psr\Log\LoggerInterface;
+use React\EventLoop\LoopInterface;
+use function FastRoute\simpleDispatcher;
+
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\HttpServer;
-use React\Promise\PromiseInterface;
-use React\Socket\SocketServer;
-use FastRoute\RouteCollector;
 use React\Http\Message\Response;
-use function FastRoute\simpleDispatcher;
+use React\Promise\PromiseInterface;
+
 use function React\Promise\resolve;
+
+use React\Socket\SocketServer;
+use Symfony\Component\HttpClient\CurlHttpClient;
 
 final readonly class TwitchInteraction implements InteractionInterface
 {
     private const DEFAULT_HEADERS = [
         'Server' => '',
-        'Access-Control-Allow-Origin'  => '*',
+        'Access-Control-Allow-Origin' => '*',
         'Access-Control-Allow-Methods' => 'GET, OPTIONS',
     ];
     private const JSON_TYPE = [
@@ -33,6 +40,11 @@ final readonly class TwitchInteraction implements InteractionInterface
 
     public function __construct(
         private int $reactHttpServerPort,
+        private string $twitchAppClientId,
+        private string $twitchAppClientSecret,
+        private string $twitchAppCallback,
+        private LoopInterface $loop,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -41,10 +53,11 @@ final readonly class TwitchInteraction implements InteractionInterface
         // @see https://agiroloki.medium.com/streaming-reactphp-in-reactjs-2cda05de3b73
         $http = new HttpServer(function (ServerRequestInterface $request) use ($discord): PromiseInterface {
             $dispatcher = simpleDispatcher(
-                function (RouteCollector $route) use ($request, $discord) {
-                    $route->get('/hook/eventsub/online', fn () => $this->eventOnline($request, $discord));
+                function (RouteCollector $collector) use ($request, $discord) {
+                    $collector->addRoute('GET', '/oauth/code', fn () => $this->codeOauth($request));
+                    $collector->addRoute('POST', '/hook/eventsub/online', fn () => $this->eventOnline($request, $discord));
 
-                    return $route;
+                    return $collector;
                 },
             );
             $response = $dispatcher->dispatch(
@@ -53,7 +66,7 @@ final readonly class TwitchInteraction implements InteractionInterface
             );
             $info = $response[0];
 
-            if ($info === Dispatcher::METHOD_NOT_ALLOWED) {
+            if (Dispatcher::METHOD_NOT_ALLOWED === $info) {
                 return resolve(
                     new Response(
                         StatusCodeInterface::STATUS_METHOD_NOT_ALLOWED,
@@ -63,12 +76,12 @@ final readonly class TwitchInteraction implements InteractionInterface
                 );
             }
 
-            if ($info === Dispatcher::NOT_FOUND) {
+            if (Dispatcher::NOT_FOUND === $info) {
                 return resolve(
                     new Response(
                         StatusCodeInterface::STATUS_NOT_FOUND,
                         array_merge(self::JSON_TYPE, self::DEFAULT_HEADERS),
-                        json_encode(['message' => 'Route not found']),
+                        json_encode(['message' => 'Route not found: ' . $request->getUri()->getPath()]),
                     ),
                 );
             }
@@ -76,23 +89,63 @@ final readonly class TwitchInteraction implements InteractionInterface
             return $response[1]();
         });
 
-        $socket = new SocketServer(sprintf('0.0.0.0:%d', $this->reactHttpServerPort));
+        $socket = new SocketServer(sprintf('0.0.0.0:%d', $this->reactHttpServerPort), loop: $this->loop);
+
+        $http->on('error', function (\Exception $throwable) {
+            $this->logger->critical($throwable->getMessage());
+        });
+
         $http->listen($socket);
+    }
+
+    private function codeOauth(ServerRequestInterface $request): PromiseInterface
+    {
+        $queryParams = $request->getQueryParams();
+
+        $client = new CurlHttpClient(['base_uri' => 'https://id.twitch.tv']);
+        $response = $client->request('POST', '/oauth2/token', [
+            'body' => sprintf(
+                'client_id=%s&client_secret=%s&code=%s&grant_type=authorization_code&redirect_uri=%s',
+                $this->twitchAppClientId,
+                $this->twitchAppClientSecret,
+                $queryParams['code'],
+                $this->twitchAppCallback
+            ),
+        ]
+        );
+
+        return resolve(
+            new Response(
+                StatusCodeInterface::STATUS_OK,
+                \array_merge(self::TEXT_TYPE, self::DEFAULT_HEADERS),
+                $response->getContent(false),
+            ),
+        );
     }
 
     private function eventOnline(ServerRequestInterface $request, Discord $discord): PromiseInterface
     {
         $contents = $request->getBody()->getContents();
-        $webhook = json_decode($contents, true);
+        $webhookContents = json_decode($contents, true);
 
-        if ('stream.online' === $webhook['type']) {
-            $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent('STREAMER IS LIVE'));
+        $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent(json_encode($request->getHeaders())));
+        $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent($contents));
+
+        if ('webhook_callback_verification' === $request->getHeaderLine('Twitch-Eventsub-Message-Type')) {
+            return resolve(
+                new Response(
+                    StatusCodeInterface::STATUS_OK,
+                    \array_merge(self::TEXT_TYPE, self::DEFAULT_HEADERS),
+                    $webhookContents['challenge']
+                ),
+            );
         }
 
         return resolve(
             new Response(
                 StatusCodeInterface::STATUS_OK,
                 \array_merge(self::TEXT_TYPE, self::DEFAULT_HEADERS),
+                'OK'
             ),
         );
     }
