@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wiwi\Bot\Discord\Interaction;
 
+use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use FastRoute\Dispatcher;
 use Fig\Http\Message\StatusCodeInterface;
@@ -40,8 +41,8 @@ final readonly class TwitchInteraction implements InteractionInterface
         // @see https://agiroloki.medium.com/streaming-reactphp-in-reactjs-2cda05de3b73
         $http = new HttpServer(function (ServerRequestInterface $request) use ($discord): PromiseInterface {
             $dispatcher = simpleDispatcher(
-                function (RouteCollector $route) use ($discord) {
-                    $route->get('/hook/eventsub/online', fn () => $this->eventOnline($discord));
+                function (RouteCollector $route) use ($request, $discord) {
+                    $route->get('/hook/eventsub/online', fn () => $this->eventOnline($request, $discord));
 
                     return $route;
                 },
@@ -79,9 +80,14 @@ final readonly class TwitchInteraction implements InteractionInterface
         $http->listen($socket);
     }
 
-    private function eventOnline(Discord $discord): PromiseInterface
+    private function eventOnline(ServerRequestInterface $request, Discord $discord): PromiseInterface
     {
-        // @fixme Send message on Discord server when Streamer is Online
+        $contents = $request->getBody()->getContents();
+        $webhook = json_decode($contents, true);
+
+        if ('stream.online' === $webhook['type']) {
+            $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent('STREAMER IS LIVE'));
+        }
 
         return resolve(
             new Response(
