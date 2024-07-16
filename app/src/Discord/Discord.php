@@ -7,7 +7,6 @@ namespace Wiwi\Bot\Discord;
 use Discord\Discord as Client;
 use Discord\WebSockets\Intents;
 use Psr\Log\LoggerInterface;
-use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 

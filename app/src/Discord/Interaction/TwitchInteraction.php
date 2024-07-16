@@ -9,12 +9,12 @@ use Discord\Discord;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
 
-use Psr\Log\LoggerInterface;
-use React\EventLoop\LoopInterface;
 use function FastRoute\simpleDispatcher;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use React\EventLoop\LoopInterface;
 use React\Http\HttpServer;
 use React\Http\Message\Response;
 use React\Promise\PromiseInterface;
@@ -22,7 +22,6 @@ use React\Promise\PromiseInterface;
 use function React\Promise\resolve;
 
 use React\Socket\SocketServer;
-use Symfony\Component\HttpClient\CurlHttpClient;
 
 final readonly class TwitchInteraction implements InteractionInterface
 {
@@ -40,11 +39,10 @@ final readonly class TwitchInteraction implements InteractionInterface
 
     public function __construct(
         private int $reactHttpServerPort,
-        private string $twitchAppClientId,
-        private string $twitchAppClientSecret,
-        private string $twitchAppCallback,
         private LoopInterface $loop,
         private LoggerInterface $logger,
+        private string $twitchDiscordRole,
+        private string $twitchDiscordChannel
     ) {
     }
 
@@ -54,7 +52,6 @@ final readonly class TwitchInteraction implements InteractionInterface
         $http = new HttpServer(function (ServerRequestInterface $request) use ($discord): PromiseInterface {
             $dispatcher = simpleDispatcher(
                 function (RouteCollector $collector) use ($request, $discord) {
-                    $collector->addRoute('GET', '/oauth/code', fn () => $this->codeOauth($request));
                     $collector->addRoute('POST', '/hook/eventsub/online', fn () => $this->eventOnline($request, $discord));
 
                     return $collector;
@@ -98,39 +95,12 @@ final readonly class TwitchInteraction implements InteractionInterface
         $http->listen($socket);
     }
 
-    private function codeOauth(ServerRequestInterface $request): PromiseInterface
-    {
-        $queryParams = $request->getQueryParams();
-
-        $client = new CurlHttpClient(['base_uri' => 'https://id.twitch.tv']);
-        $response = $client->request('POST', '/oauth2/token', [
-            'body' => sprintf(
-                'client_id=%s&client_secret=%s&code=%s&grant_type=authorization_code&redirect_uri=%s',
-                $this->twitchAppClientId,
-                $this->twitchAppClientSecret,
-                $queryParams['code'],
-                $this->twitchAppCallback
-            ),
-        ]
-        );
-
-        return resolve(
-            new Response(
-                StatusCodeInterface::STATUS_OK,
-                \array_merge(self::TEXT_TYPE, self::DEFAULT_HEADERS),
-                $response->getContent(false),
-            ),
-        );
-    }
-
     private function eventOnline(ServerRequestInterface $request, Discord $discord): PromiseInterface
     {
         $contents = $request->getBody()->getContents();
         $webhookContents = json_decode($contents, true);
 
-        $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent(json_encode($request->getHeaders())));
-        $discord->getChannel('1229375406797357076')->sendMessage(MessageBuilder::new()->setContent($contents));
-
+        // webhook verification
         if ('webhook_callback_verification' === $request->getHeaderLine('Twitch-Eventsub-Message-Type')) {
             return resolve(
                 new Response(
@@ -139,6 +109,10 @@ final readonly class TwitchInteraction implements InteractionInterface
                     $webhookContents['challenge']
                 ),
             );
+        } elseif (array_key_exists('subscription', $webhookContents) && 'stream.online' === $webhookContents['subscription']) {
+            $discord->getChannel($this->twitchDiscordChannel)->sendMessage(MessageBuilder::new()->setContent(
+                sprintf('<@&%s> WiwiTV part en live sur https://www.twitch.tv/wiwitv ! Viens foutre le bordel et raconter ta vie !', $this->twitchDiscordRole)
+            ));
         }
 
         return resolve(

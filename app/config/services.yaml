@@ -19,9 +19,8 @@ services:
             string $youtubeDiscordVodRole: '%env(YOUTUBE_DISCORD_VOD_ROLE)%'
             string $youtubeDiscordChannel: '%env(YOUTUBE_DISCORD_CHANNEL)%'
             int $reactHttpServerPort: '%env(int:REACT_HTTP_SERVER_PORT)%'
-            string $twitchAppClientId: '%env(TWITCH_APP_CLIENT_ID)%'
-            string $twitchAppClientSecret: '%env(TWITCH_APP_CLIENT_SECRET)%'
-            string $twitchAppCallback: '%env(TWITCH_APP_CALLBACK)%'
+            string $twitchDiscordRole: '%env(TWITCH_DISCORD_ROLE)%'
+            string $twitchDiscordChannel: '%env(TWITCH_DISCORD_CHANNEL)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
